@@ -10,14 +10,14 @@ function getCookie(req, name) {
 }
 
 export function requireAdmin(req, res, next) {
-  const token = getCookie(req, 'barberman_admin_session');
+  const token = getCookie(req, 'my_beauty_salon_admin_session');
   if (!token) return res.status(401).json({ message: 'Nicht angemeldet.' });
 
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET, {
       algorithms: ['HS256'],
-      issuer: process.env.JWT_ISSUER || 'barberman',
-      audience: process.env.JWT_AUDIENCE || 'barberman-admin',
+      issuer: process.env.JWT_ISSUER || 'my-beauty-salon',
+      audience: process.env.JWT_AUDIENCE || 'my-beauty-salon-admin',
     });
     if (payload.role !== 'admin' || !payload.sub) return res.status(403).json({ message: 'Zugriff verweigert.' });
     req.admin = payload;
