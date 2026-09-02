@@ -65,7 +65,13 @@ function BookingModal({ services, onClose }) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
-  useEffect(() => { if (!date) return; setTime(''); api.availability(date).then(data => setSlots(data.slots)).catch(() => setSlots([])); }, [date]);
+  useEffect(() => {
+    if (!date || !serviceId) return;
+    setTime('');
+    setMessage('');
+    api.availability(date, serviceId).then(data => setSlots(data.slots)).catch(error => { setSlots([]); setMessage(error.message); });
+  }, [date, serviceId]);
+
   const update = e => setForm(prev => ({...prev, [e.target.name]: e.target.value}));
   const canContinue = step === 1 ? Boolean(serviceId) : step === 2 ? Boolean(date && time) : Boolean(form.name.trim() && form.email.trim() && form.phone.trim());
 
