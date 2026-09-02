@@ -28,11 +28,11 @@ export async function sendAppointmentNotifications({ appointment, customer, serv
   const time = escapeHtml(appointment.time);
   const note = escapeHtml(appointment.note || '');
 
-  const customerHtml = `<div style="font-family:Arial,sans-serif;line-height:1.6"><h2>Deine Terminanfrage bei Barberman</h2><p>Hallo ${customerName},</p><p>deine Anfrage wurde erfolgreich gespeichert.</p><p><strong>Service:</strong> ${serviceName}<br><strong>Datum:</strong> ${date}<br><strong>Uhrzeit:</strong> ${time}</p>${note ? `<p><strong>Nachricht:</strong> ${note}</p>` : ''}<p>Wir melden uns zur finalen Bestätigung bei dir.</p></div>`;
+  const customerHtml = `<div style="font-family:Arial,sans-serif;line-height:1.6"><h2>Deine Terminanfrage bei My Beauty Salon</h2><p>Hallo ${customerName},</p><p>deine Anfrage wurde erfolgreich gespeichert.</p><p><strong>Service:</strong> ${serviceName}<br><strong>Datum:</strong> ${date}<br><strong>Uhrzeit:</strong> ${time}</p>${note ? `<p><strong>Nachricht:</strong> ${note}</p>` : ''}<p>Wir melden uns zur finalen Bestätigung bei dir.</p></div>`;
   const adminHtml = `<div style="font-family:Arial,sans-serif;line-height:1.6"><h2>Neue Terminanfrage</h2><p><strong>Kunde:</strong> ${customerName}<br><strong>E-Mail:</strong> ${escapeHtml(customer.email)}<br><strong>Telefon:</strong> ${escapeHtml(customer.phone)}</p><p><strong>Service:</strong> ${serviceName}<br><strong>Datum:</strong> ${date}<br><strong>Uhrzeit:</strong> ${time}</p>${note ? `<p><strong>Nachricht:</strong> ${note}</p>` : ''}</div>`;
 
   await Promise.all([
-    transporter.sendMail({ from: process.env.MAIL_FROM, to: customer.email, subject: 'Ihre Terminanfrage bei Barberman', html: customerHtml }),
+    transporter.sendMail({ from: process.env.MAIL_FROM, to: customer.email, subject: 'Ihre Terminanfrage bei My Beauty Salon', html: customerHtml }),
     transporter.sendMail({ from: process.env.MAIL_FROM, to: adminEmail, subject: `Neue Terminanfrage: ${service.name}`, html: adminHtml }),
   ]);
 
