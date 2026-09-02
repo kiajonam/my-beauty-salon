@@ -10,11 +10,13 @@ const COOKIE = 'barberman_admin_session';
 
 function cookieOptions() {
   const maxAge = Math.max(60, Math.floor(Number(process.env.SESSION_MAX_AGE_MS || 28800000) / 1000));
-  return `HttpOnly; Path=/; SameSite=Lax; Max-Age=${maxAge}${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
+  const sameSite = process.env.NODE_ENV === 'production' ? 'None' : 'Lax';
+  return `HttpOnly; Path=/; SameSite=${sameSite}; Max-Age=${maxAge}${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
 }
 
 function clearCookieOptions() {
-  return `HttpOnly; Path=/; SameSite=Lax; Max-Age=0${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
+  const sameSite = process.env.NODE_ENV === 'production' ? 'None' : 'Lax';
+  return `HttpOnly; Path=/; SameSite=${sameSite}; Max-Age=0${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
 }
 
 router.post('/login', loginLimiter, (req, res) => {
