@@ -6,6 +6,7 @@ const statusOptions = ['Neu', 'Bestätigt', 'Erledigt', 'Storniert', 'Abgelehnt'
 const reviewStatuses = ['Pending', 'Freigegeben', 'Abgelehnt'];
 const emptyService = { name: '', category: 'Haare', description: '', priceFrom: '', durationMinutes: 60, active: true };
 const money = value => `${Number(value || 0).toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} €`;
+const defaultSettings = { salonName: '', city: '', phone: '', email: '', address: '', hoursMon: '', hoursTue: '', hoursWed: '', hoursThu: '', hoursFri: '', hoursSat: '', hoursSun: '' };
 
 export default function Admin() {
   const [admin, setAdmin] = useState(null);
@@ -17,6 +18,7 @@ export default function Admin() {
   const [customers, setCustomers] = useState([]);
   const [services, setServices] = useState([]);
   const [reviews, setReviews] = useState([]);
+  const [settings, setSettings] = useState(defaultSettings);
   const [section, setSection] = useState('dashboard');
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [editingService, setEditingService] = useState(null);
@@ -40,6 +42,7 @@ export default function Admin() {
       if (section === 'customers') setCustomers((await api.customers()).customers);
       if (section === 'services') setServices((await api.servicesAdmin()).services);
       if (section === 'reviews') setReviews((await api.reviews()).reviews);
+      if (section === 'settings') setSettings({ ...defaultSettings, ...(await api.adminSettings()).settings });
     } catch (e) {
       setError(e.message);
     }
@@ -112,6 +115,16 @@ export default function Admin() {
     } catch (e) { setError(e.message); }
   }
 
+  async function saveSettings(e) {
+    e.preventDefault();
+    setSaving(true); setError('');
+    try {
+      await api.updateSettings(settings);
+      setMessage('Einstellungen gespeichert.');
+    } catch (e) { setError(e.message); }
+    finally { setSaving(false); }
+  }
+
   function navigate(next) {
     setSection(next);
     setError('');
@@ -137,17 +150,14 @@ export default function Admin() {
     </div>
   );
 
-  const title = { dashboard: 'Dashboard', appointments: 'Termine', customers: 'Kunden', services: 'Dienstleistungen', reviews: 'Bewertungen' }[section];
+  const title = { dashboard: 'Dashboard', appointments: 'Termine', customers: 'Kunden', services: 'Dienstleistungen', reviews: 'Bewertungen', settings: 'Einstellungen' }[section];
+  const navLabels = { dashboard: 'Dashboard', appointments: 'Termine', customers: 'Kunden', services: 'Dienstleistungen', reviews: 'Bewertungen', settings: 'Einstellungen' };
 
   return (
     <div className="admin-page">
       <aside className="admin-sidebar">
         <a className="brand" href="/"><span className="brand-mark">B</span><span>Barber<span>man</span></span></a>
-        {['dashboard', 'appointments', 'customers', 'services', 'reviews'].map(item => (
-          <button key={item} onClick={() => navigate(item)} className={section === item ? 'active' : ''}>
-            {{ dashboard: 'Dashboard', appointments: 'Termine', customers: 'Kunden', services: 'Dienstleistungen', reviews: 'Bewertungen' }[item]}
-          </button>
-        ))}
+        {Object.keys(navLabels).map(item => <button key={item} onClick={() => navigate(item)} className={section === item ? 'active' : ''}>{navLabels[item]}</button>)}
         <div className="admin-spacer" />
         <button onClick={async () => { await api.logout(); setAdmin(false); }}>Abmelden</button>
       </aside>
@@ -196,6 +206,15 @@ export default function Admin() {
           <div className="admin-table-wrap"><table><thead><tr><th>Kunde</th><th>Bewertung</th><th>Text</th><th>Status</th></tr></thead><tbody>
             {reviews.map(r => <tr key={r.id}><td><strong>{r.customerName}</strong><small>{new Date(r.createdAt).toLocaleDateString('de-DE')}</small></td><td>{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</td><td className="review-text">{r.text}</td><td><select value={r.status} onChange={e => changeReviewStatus(r.id, e.target.value)}>{reviewStatuses.map(s => <option key={s}>{s}</option>)}</select></td></tr>)}
           </tbody></table>{!reviews.length && <p className="empty-state">Noch keine Bewertungen vorhanden.</p>}</div>
+        )}
+
+        {section === 'settings' && (
+          <form className="service-editor settings-editor" onSubmit={saveSettings}>
+            <div className="settings-section"><p className="eyebrow">Studio</p><h2>Allgemeine Angaben</h2><div className="service-editor-grid"><label>Name<input value={settings.salonName} onChange={e => setSettings({ ...settings, salonName: e.target.value })} required /></label><label>Stadt<input value={settings.city} onChange={e => setSettings({ ...settings, city: e.target.value })} required /></label><label>Telefon<input value={settings.phone} onChange={e => setSettings({ ...settings, phone: e.target.value })} required /></label><label>E-Mail<input type="email" value={settings.email} onChange={e => setSettings({ ...settings, email: e.target.value })} required /></label><label className="full-field">Adresse<input value={settings.address} onChange={e => setSettings({ ...settings, address: e.target.value })} required /></label></div></div>
+            <div className="settings-section"><p className="eyebrow">Öffnungszeiten</p><h2>Wann wir geöffnet haben</h2><div className="service-editor-grid"><label>Montag<input value={settings.hoursMon} onChange={e => setSettings({ ...settings, hoursMon: e.target.value })} placeholder="09:00–18:00" required /></label><label>Dienstag<input value={settings.hoursTue} onChange={e => setSettings({ ...settings, hoursTue: e.target.value })} placeholder="09:00–18:00" required /></label><label>Mittwoch<input value={settings.hoursWed} onChange={e => setSettings({ ...settings, hoursWed: e.target.value })} placeholder="09:00–18:00" required /></label><label>Donnerstag<input value={settings.hoursThu} onChange={e => setSettings({ ...settings, hoursThu: e.target.value })} placeholder="09:00–19:00" required /></label><label>Freitag<input value={settings.hoursFri} onChange={e => setSettings({ ...settings, hoursFri: e.target.value })} placeholder="09:00–19:00" required /></label><label>Samstag<input value={settings.hoursSat} onChange={e => setSettings({ ...settings, hoursSat: e.target.value })} placeholder="09:00–16:00" required /></label><label>Sonntag<input value={settings.hoursSun} onChange={e => setSettings({ ...settings, hoursSun: e.target.value })} placeholder="Geschlossen" required /></label></div></div>
+            <p className="settings-help">Öffnungszeiten bitte als <strong>09:00–18:00</strong> oder <strong>Geschlossen</strong> eintragen. Die Verfügbarkeit im Buchungsformular wird automatisch daran angepasst.</p>
+            <div className="modal-actions"><button className="primary-button" disabled={saving}>{saving ? 'Speichern…' : 'Einstellungen speichern'}</button></div>
+          </form>
         )}
       </main>
 
