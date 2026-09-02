@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
+    "seed": "node src/db/seed.js",
     "create-admin": "node src/db/createAdmin.js"
   },
   "dependencies": {
