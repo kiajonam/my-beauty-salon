@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CalendarDays, Clock3, Instagram, Menu, Scissors, Sparkles, Star, X } from 'lucide-react';
+import { CalendarDays, Clock3, Menu, Scissors, Sparkles, Star, X } from 'lucide-react';
 import { api } from './services/api';
 import Admin from './pages/Admin';
 import Legal from './pages/Legal';
@@ -42,7 +42,7 @@ function PublicSite() {
       {reviews.length > 0 && <section className="reviews-section section-pad"><div className="section-heading compact"><div><p className="eyebrow">Kundenstimmen</p><h2>Was unsere <em>Kunden</em> sagen.</h2></div></div><div className="review-grid">{reviews.slice(0,3).map(review=><article className="review-card" key={review.id}><div className="review-stars">{'★'.repeat(review.rating)}<span>{'★'.repeat(5-review.rating)}</span></div><p>„{review.text}“</p><strong>{review.customerName}</strong></article>)}</div></section>}
       <section className="cta-section section-pad"><div className="cta-inner reveal"><Sparkles size={25}/><p className="eyebrow">Ready when you are</p><h2>Dein nächster<br/><em>Lieblingslook.</em></h2><button className="primary-button" onClick={()=>setBookingOpen(true)}>Jetzt Termin sichern <CalendarDays size={18}/></button></div></section>
     </main>
-    <footer id="contact" className="footer section-pad"><div><a className="brand" href="#home"><span className="brand-mark"><Scissors size={18}/></span><span>Barber<span>man</span></span></a><p>Hair & Beauty in Köln.</p></div><div><strong>Kontakt</strong><a href="tel:+492211234567">0221 123 45 67</a><a href="mailto:hello@barberman.de">hello@barberman.de</a></div><div><strong>Adresse</strong><span>Köln, Deutschland</span></div><div><strong>Social</strong><a href="#contact"><Instagram size={17}/> Instagram</a><a href="/impressum">Impressum</a><a href="/datenschutz">Datenschutz</a></div></footer>
+    <footer id="contact" className="footer section-pad"><div><a className="brand" href="#home"><span className="brand-mark"><Scissors size={18}/></span><span>Barber<span>man</span></span></a><p>Hair & Beauty in Köln.</p></div><div><strong>Kontakt</strong><a href="tel:+492211234567">0221 123 45 67</a><a href="mailto:hello@barberman.de">hello@barberman.de</a></div><div><strong>Adresse</strong><span>Köln, Deutschland</span></div><div><strong>Social</strong><a href="#contact">Instagram</a><a href="/impressum">Impressum</a><a href="/datenschutz">Datenschutz</a></div></footer>
     {bookingOpen && <BookingModal services={services} onClose={()=>setBookingOpen(false)}/>}</div>;
 }
 
