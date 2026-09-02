@@ -11,6 +11,7 @@ import './db/database.js';
 const app = express();
 const port = Number(process.env.PORT || 4000);
 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+const isProduction = process.env.NODE_ENV === 'production';
 
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
@@ -27,11 +28,17 @@ app.use('/api/admin', adminRouter);
 app.use((_req, res) => res.status(404).json({ message: 'Route nicht gefunden.' }));
 app.use((error, _req, res, _next) => {
   console.error(error);
-  res.status(500).json({ message: 'Interner Serverfehler.' });
+  res.status(500).json({ message: isProduction ? 'Interner Serverfehler.' : (error.message || 'Interner Serverfehler.') });
 });
 
 if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
-  console.warn('Warning: JWT_SECRET should contain at least 32 characters.');
+  throw new Error('JWT_SECRET must contain at least 32 characters.');
+}
+if (!process.env.FRONTEND_URL) {
+  console.warn('Warning: FRONTEND_URL is not configured; using localhost default.');
+}
+if (isProduction && (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || !process.env.MAIL_FROM)) {
+  console.warn('Warning: SMTP is not fully configured. Appointment emails will be skipped.');
 }
 
-app.listen(port, () => console.log(`Barberman API listening on http://localhost:${port}`));
+app.listen(port, () => console.log(`Barberman API listening on port ${port}`));
