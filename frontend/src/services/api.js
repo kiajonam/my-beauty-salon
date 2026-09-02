@@ -28,7 +28,7 @@ export const api = {
   createService: payload => request('/api/admin/services', { method: 'POST', body: JSON.stringify(payload) }),
   updateService: (id, payload) => request(`/api/admin/services/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
   reviews: () => request('/api/admin/reviews'),
-  updateReviewStatus: (id, status) => request(`/api/admin/reviews/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status })),
+  updateReviewStatus: (id, status) => request(`/api/admin/reviews/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
   adminSettings: () => request('/api/admin/settings'),
   updateSettings: settings => request('/api/admin/settings', { method: 'PATCH', body: JSON.stringify({ settings }) }),
 };
