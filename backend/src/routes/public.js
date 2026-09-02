@@ -24,7 +24,7 @@ function addMinutes(time, minutes) {
   return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
 }
 
-function slotsForDate(date) {
+function slotsForDate(date, durationMinutes = 30) {
   const day = new Date(`${date}T12:00:00`).getDay();
   const hours = OPENING_HOURS[day];
   if (!hours) return [];
@@ -33,10 +33,28 @@ function slotsForDate(date) {
   const startMin = start[0] * 60 + start[1];
   const endMin = end[0] * 60 + end[1];
   const result = [];
-  for (let t = startMin; t + 30 <= endMin; t += 30) {
+  for (let t = startMin; t + durationMinutes <= endMin; t += 30) {
     result.push(`${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`);
   }
   return result;
+}
+
+function isFutureDate(date) {
+  const today = new Date();
+  const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  return date >= todayKey;
+}
+
+function getService(serviceId) {
+  return db.prepare('SELECT id, name, duration_minutes FROM services WHERE id = ? AND active = 1').get(serviceId);
+}
+
+function getAvailableSlots(date, durationMinutes) {
+  const appointments = db.prepare("SELECT time, end_time AS endTime FROM appointments WHERE date = ? AND status IN ('Neu','Bestätigt')").all(date);
+  return slotsForDate(date, durationMinutes).filter(slot => {
+    const slotEnd = addMinutes(slot, durationMinutes);
+    return !appointments.some(appointment => slot < appointment.endTime && slotEnd > appointment.time);
+  });
 }
 
 router.get('/services', (_req, res) => {
@@ -46,11 +64,13 @@ router.get('/services', (_req, res) => {
 
 router.get('/availability', (req, res) => {
   const date = clean(req.query.date, 10);
-  if (!validDate(date)) return res.status(400).json({ message: 'Ungültiges Datum.' });
-  const booked = new Set(
-    db.prepare("SELECT time FROM appointments WHERE date = ? AND status IN ('Neu','Bestätigt')").all(date).map(row => row.time),
-  );
-  res.json({ date, openingHours: OPENING_HOURS[new Date(`${date}T12:00:00`).getDay()], slots: slotsForDate(date).filter(slot => !booked.has(slot)) });
+  const serviceId = Number(req.query.serviceId);
+  if (!validDate(date) || !isFutureDate(date)) return res.status(400).json({ message: 'Bitte wähle ein gültiges zukünftiges Datum.' });
+  const service = Number.isInteger(serviceId) && serviceId > 0 ? getService(serviceId) : null;
+  if (serviceId && !service) return res.status(400).json({ message: 'Dienstleistung wurde nicht gefunden.' });
+  const duration = service?.duration_minutes ?? 30;
+  const day = new Date(`${date}T12:00:00`).getDay();
+  res.json({ date, openingHours: OPENING_HOURS[day], slots: getAvailableSlots(date, duration) });
 });
 
 router.post('/appointments', (req, res) => {
@@ -66,14 +86,24 @@ router.post('/appointments', (req, res) => {
   if (name.length < 2 || phone.length < 6 || !validEmail(email) || !validDate(date) || !validTime(time) || !Number.isInteger(serviceId)) {
     return res.status(400).json({ message: 'Bitte alle Pflichtfelder korrekt ausfüllen.' });
   }
-  if (!slotsForDate(date).includes(time)) return res.status(400).json({ message: 'Diese Uhrzeit ist nicht verfügbar.' });
+  if (!isFutureDate(date)) return res.status(400).json({ message: 'Bitte wähle ein zukünftiges Datum.' });
 
-  const service = db.prepare('SELECT id, name, duration_minutes FROM services WHERE id = ? AND active = 1').get(serviceId);
+  const service = getService(serviceId);
   if (!service) return res.status(400).json({ message: 'Dienstleistung wurde nicht gefunden.' });
+
+  const availableSlots = getAvailableSlots(date, service.duration_minutes);
+  if (!availableSlots.includes(time)) return res.status(400).json({ message: 'Diese Uhrzeit ist nicht verfügbar.' });
 
   const endTime = addMinutes(time, service.duration_minutes);
   try {
     const create = db.transaction(() => {
+      const overlapping = db.prepare("SELECT id FROM appointments WHERE date = ? AND status IN ('Neu','Bestätigt') AND time < ? AND end_time > ? LIMIT 1").get(date, endTime, time);
+      if (overlapping) {
+        const error = new Error('SLOT_TAKEN');
+        error.code = 'SLOT_TAKEN';
+        throw error;
+      }
+
       let customer = db.prepare('SELECT id FROM customers WHERE lower(email) = lower(?) OR phone = ? ORDER BY id LIMIT 1').get(email, phone);
       if (customer) {
         db.prepare('UPDATE customers SET name = ?, email = ?, phone = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(name, email, phone, customer.id);
@@ -87,7 +117,7 @@ router.post('/appointments', (req, res) => {
     const appointment = create();
     res.status(201).json({ message: 'Termin erfolgreich angefragt.', appointment });
   } catch (error) {
-    if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') return res.status(409).json({ message: 'Dieser Termin wurde gerade vergeben. Bitte wähle eine andere Uhrzeit.' });
+    if (error.code === 'SLOT_TAKEN' || error.code === 'SQLITE_CONSTRAINT_UNIQUE') return res.status(409).json({ message: 'Dieser Zeitraum wurde gerade vergeben. Bitte wähle eine andere Uhrzeit.' });
     console.error(error);
     res.status(500).json({ message: 'Termin konnte nicht gespeichert werden.' });
   }
