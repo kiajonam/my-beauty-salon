@@ -24,7 +24,7 @@ Modern German Hair & Beauty salon website for Köln with online appointment book
 - Impressum and Datenschutz pages
 
 ### Admin panel
-- `/admin/login`
+- `/admin`
 - Dashboard with today's appointments, open requests, customers and monthly revenue
 - Appointment status management
 - Customer management
@@ -73,11 +73,50 @@ npm install
 npm run dev
 ```
 
+For local development, `frontend/.env` can contain:
+
+```env
+VITE_API_URL=http://localhost:4000
+```
+
 Open the URL printed by Vite, normally `http://localhost:5173/`. If that port is already occupied, Vite automatically uses another port such as `5174`.
+
+## Deployment
+
+### Frontend on Netlify
+
+The repository contains `netlify.toml`. Netlify builds from the `frontend` directory and publishes `frontend/dist`.
+
+Set this environment variable in the Netlify site settings:
+
+```env
+VITE_API_URL=https://YOUR-BACKEND-DOMAIN
+```
+
+After changing `VITE_API_URL`, trigger a new deploy because Vite injects it during the build.
+
+### Backend on Render
+
+A `render.yaml` Blueprint is included for the Express API. It uses the `backend` directory as the service root, exposes `/health` for health checks and mounts persistent storage for the SQLite database.
+
+Configure these secrets/values in the Render service before going live:
+
+```env
+FRONTEND_URL=https://YOUR-NETLIFY-DOMAIN
+ADMIN_EMAIL=...
+ADMIN_PASSWORD=...
+SMTP_HOST=...
+SMTP_USER=...
+SMTP_PASS=...
+MAIL_FROM=...
+ADMIN_NOTIFICATION_EMAIL=...
+```
+
+The generated `JWT_SECRET` should remain secret. Do not commit `.env` or credentials.
 
 ## Email notifications
 
-SMTP is optional for local development. For production, configure these variables in `backend/.env`:
+SMTP is optional for local development. For production, configure:
 
 ```env
 SMTP_HOST=
@@ -89,8 +128,6 @@ MAIL_FROM=Barberman <hello@barberman.de>
 ADMIN_NOTIFICATION_EMAIL=admin@barberman.de
 ```
 
-Never commit `.env` or real credentials.
-
 ## Production checklist
 
 Before going live:
@@ -99,10 +136,10 @@ Before going live:
 2. Use a strong unique `JWT_SECRET` and admin password.
 3. Set `NODE_ENV=production` and the real `FRONTEND_URL`.
 4. Configure real SMTP credentials and sender address.
-5. Serve the frontend and API over HTTPS.
-6. Keep the SQLite `data/` directory persistent when deploying.
-7. Run the frontend build with `npm run build`.
-8. Test booking, cancellation/status changes, email delivery and mobile layouts on the production domain.
+5. Set the Netlify `VITE_API_URL` to the deployed backend URL and redeploy the frontend.
+6. Keep the SQLite `data/` directory on persistent storage when deploying the backend.
+7. Test booking, double-booking protection, admin login, status changes, email delivery and mobile layouts on the production domain.
+8. Verify the legal pages and cookie/privacy requirements with the real business information before launch.
 
 ## Important
 
