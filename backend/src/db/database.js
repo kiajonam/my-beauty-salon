@@ -101,5 +101,11 @@ const insertSetting = db.prepare('INSERT OR IGNORE INTO settings (key, value) VA
 const seedSettings = db.transaction(() => Object.entries(defaults).forEach(([key, value]) => insertSetting.run(key, value)));
 seedSettings();
 
+const migrateLegacyBranding = db.transaction(() => {
+  db.prepare("UPDATE settings SET value = ?, updated_at = CURRENT_TIMESTAMP WHERE key = 'salonName' AND value = 'Barberman'").run('My Beauty Salon');
+  db.prepare("UPDATE settings SET value = ?, updated_at = CURRENT_TIMESTAMP WHERE key = 'email' AND value = 'hello@barberman.de'").run('hello@mybeautysalon.de');
+});
+migrateLegacyBranding();
+
 export { defaults as DEFAULT_SETTINGS };
 export default db;
