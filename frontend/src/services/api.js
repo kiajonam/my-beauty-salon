@@ -13,7 +13,7 @@ async function request(path, options = {}) {
 
 export const api = {
   services: () => request('/api/public/services'),
-  availability: date => request(`/api/public/availability?date=${encodeURIComponent(date)}`),
+  availability: (date, serviceId) => request(`/api/public/availability?date=${encodeURIComponent(date)}${serviceId ? `&serviceId=${encodeURIComponent(serviceId)}` : ''}`),
   book: payload => request('/api/public/appointments', { method: 'POST', body: JSON.stringify(payload) }),
   login: payload => request('/api/auth/login', { method: 'POST', body: JSON.stringify(payload) }),
   logout: () => request('/api/auth/logout', { method: 'POST' }),
