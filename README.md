@@ -1,4 +1,4 @@
-# Barberman
+# My Beauty Salon
 
 Modern German Hair & Beauty salon website for Köln with online appointment booking and a protected admin panel.
 
@@ -45,7 +45,7 @@ Create `backend/.env` from `backend/.env.example` and set at least:
 
 ```env
 JWT_SECRET=your-random-secret-with-at-least-32-characters
-ADMIN_EMAIL=admin@barberman.de
+ADMIN_EMAIL=admin@mybeautysalon.de
 ADMIN_PASSWORD=your-secure-password
 ```
 
@@ -124,8 +124,8 @@ SMTP_PORT=587
 SMTP_SECURE=false
 SMTP_USER=
 SMTP_PASS=
-MAIL_FROM=Barberman <hello@barberman.de>
-ADMIN_NOTIFICATION_EMAIL=admin@barberman.de
+MAIL_FROM=My Beauty Salon <hello@mybeautysalon.de>
+ADMIN_NOTIFICATION_EMAIL=admin@mybeautysalon.de
 ```
 
 ## Production checklist
