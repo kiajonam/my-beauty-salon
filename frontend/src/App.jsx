@@ -16,22 +16,18 @@ const fallbackServices = [
 ];
 
 const fallbackSettings = {
-  salonName: 'My Beauty Salon',
-  city: 'Köln',
-  phone: '0221 123 45 67',
-  email: 'hello@mybeautysalon.de',
-  address: 'Köln, Deutschland',
-  hoursMon: '09:00–18:00',
-  hoursTue: '09:00–18:00',
-  hoursWed: '09:00–18:00',
-  hoursThu: '09:00–19:00',
-  hoursFri: '09:00–19:00',
-  hoursSat: '09:00–16:00',
-  hoursSun: 'Geschlossen',
+  salonName: 'My Beauty Salon', city: 'Köln', phone: '0221 123 45 67',
+  email: 'hello@mybeautysalon.de', address: 'Köln, Deutschland',
+  hoursMon: '09:00–18:00', hoursTue: '09:00–18:00', hoursWed: '09:00–18:00',
+  hoursThu: '09:00–19:00', hoursFri: '09:00–19:00', hoursSat: '09:00–16:00', hoursSun: 'Geschlossen',
 };
 
 const money = value => `ab ${Number(value).toFixed(0)} €`;
 const formatPhoneHref = phone => `tel:${String(phone ?? '').replace(/[^+\d]/g, '')}`;
+const getLocalDate = () => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+};
 
 function getWeekdayHours(settings) {
   const mondayToWednesday = [settings.hoursMon, settings.hoursTue, settings.hoursWed];
@@ -73,7 +69,7 @@ function PublicSite() {
   const weekdayHours = getWeekdayHours(settings);
 
   return <div className="site-shell">
-    <header className="navbar"><a className="brand" href="#home" onClick={() => setMenuOpen(false)}><span className="brand-mark"><Scissors size={18}/></span><span>{settings.salonName}</span></a><nav className={menuOpen ? 'nav-links open' : 'nav-links'}>{navItems.map(([label,href])=><a key={href} href={href} onClick={()=>setMenuOpen(false)}>{label}</a>)}<button className="nav-booking" onClick={()=>{setBookingOpen(true);setMenuOpen(false);}}>Termin buchen</button></nav><button className="menu-button" aria-label="Menü öffnen" onClick={()=>setMenuOpen(v=>!v)}>{menuOpen?<X/>:<Menu/>}</button></header>
+    <header className="navbar"><a className="brand" href="#home" onClick={() => setMenuOpen(false)}><span className="brand-mark"><Scissors size={18}/></span><span>{settings.salonName}</span></a><nav className={menuOpen ? 'nav-links open' : 'nav-links'}>{navItems.map(([label,href])=><a key={href} href={href} onClick={()=>setMenuOpen(false)}>{label}</a>)}<button className="nav-booking" onClick={()=>{setBookingOpen(true);setMenuOpen(false);}}>Termin buchen</button></nav><button className="menu-button" aria-label={menuOpen ? 'Menü schließen' : 'Menü öffnen'} aria-expanded={menuOpen} onClick={()=>setMenuOpen(v=>!v)}>{menuOpen?<X/>:<Menu/>}</button></header>
     <main>
       <section id="home" className="hero section-pad"><div className="hero-copy reveal"><div className="eyebrow"><Sparkles size={15}/> Hair. Beauty. You.</div><h1>Dein Look.<br/><em>Dein Moment.</em></h1><p>Modernes Hair & Beauty in {settings.city}. Präzise Schnitte, lebendige Farben und Services, die sich nach dir anfühlen.</p><div className="hero-actions"><button className="primary-button" onClick={()=>setBookingOpen(true)}>Termin buchen <CalendarDays size={18}/></button><a className="text-button" href="#services">Services entdecken <span>↗</span></a></div><div className="hero-meta"><span><Star size={15} fill="currentColor"/> 4,9/5 Kundenbewertung</span><span><Clock3 size={15}/> {weekdayHours}</span></div></div><div className="hero-visual reveal delay-1"><div className="hero-orb orb-one"/><div className="hero-orb orb-two"/><div className="portrait-card"><div className="portrait-image" role="img" aria-label="Abstrakte Beauty-Farbwelt"/><div className="floating-card"><span className="floating-icon"><Sparkles size={16}/></span><div><strong>Signature Color</strong><small>individuell abgestimmt</small></div></div></div></div></section>
       <section id="services" className="services-section section-pad"><div className="section-heading reveal"><div><p className="eyebrow">Unsere Services</p><h2>Schönheit, die zu <em>dir</em> passt.</h2></div><p>Richtpreise. Der finale Preis hängt von Haarlänge, Aufwand und gewünschtem Ergebnis ab.</p></div><div className="service-grid">{services.map((service,index)=><article className="service-card reveal" style={{'--delay':`${index*60}ms`}} key={service.id??service.name}><div><span className="service-number">{String(index+1).padStart(2,'0')}</span><h3>{service.name}</h3></div><div className="service-bottom"><strong>{money(service.priceFrom)}</strong><span>{service.durationMinutes} Min.</span></div></article>)}</div></section>
@@ -88,9 +84,22 @@ function PublicSite() {
 
 function BookingModal({services,onClose}) {
   const [step,setStep]=useState(1),[serviceId,setServiceId]=useState(''),[date,setDate]=useState(''),[time,setTime]=useState(''),[slots,setSlots]=useState([]),[form,setForm]=useState({name:'',email:'',phone:'',note:''}),[loading,setLoading]=useState(false),[message,setMessage]=useState('');
-  useEffect(()=>{if(!date||!serviceId)return;setTime('');setMessage('');api.availability(date,serviceId).then(data=>setSlots(data.slots)).catch(error=>{setSlots([]);setMessage(error.message);});},[date,serviceId]);
+
+  useEffect(() => {
+    if (!date || !serviceId) { setSlots([]); setTime(''); return; }
+    setTime(''); setMessage('');
+    api.availability(date,serviceId).then(data => setSlots(data.slots ?? [])).catch(error => { setSlots([]); setMessage(error.message); });
+  }, [date,serviceId]);
+
+  useEffect(() => {
+    const handleKeyDown = event => { if (event.key === 'Escape' && !loading) onClose(); };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [loading,onClose]);
+
   const update=e=>setForm(prev=>({...prev,[e.target.name]:e.target.value}));
+  const goBack=()=>{if(loading)return;setMessage('');if(step>1)setStep(step-1);};
   const canContinue=step===1?Boolean(serviceId):step===2?Boolean(date&&time):Boolean(form.name.trim()&&form.email.trim()&&form.phone.trim());
   async function submit(){setLoading(true);setMessage('');try{await api.book({serviceId:Number(serviceId),date,time,...form});setStep(4);}catch(error){setMessage(error.message);}finally{setLoading(false);}}
-  return <div className="modal-backdrop" onMouseDown={onClose}><div className="booking-modal" onMouseDown={e=>e.stopPropagation()}><button className="modal-close" aria-label="Schließen" onClick={onClose}><X/></button>{step<4?<><div className="eyebrow">Online-Termin</div><h2>{step===1?'Was möchtest du buchen?':step===2?'Wann passt es dir?':'Noch kurz deine Daten.'}</h2>{step===1&&<div className="booking-options">{services.map(item=><button key={item.id} className={Number(serviceId)===item.id?'booking-option active':'booking-option'} onClick={()=>setServiceId(item.id)}><span>{item.name}</span><strong>{money(item.priceFrom)}</strong></button>)}</div>}{step===2&&<div className="booking-fields"><label>Datum<input type="date" min={new Date().toISOString().slice(0,10)} value={date} onChange={e=>setDate(e.target.value)}/></label><div><span className="field-label">Uhrzeit</span>{slots.length?<div className="time-grid">{slots.map(t=><button key={t} className={time===t?'time-slot active':'time-slot'} onClick={()=>setTime(t)}>{t}</button>)}</div>:<p className="empty-state">Für diesen Tag sind aktuell keine Zeiten verfügbar.</p>}</div></div>}{step===3&&<div className="booking-fields"><label>Name<input name="name" value={form.name} onChange={update} placeholder="Vor- und Nachname"/></label><label>E-Mail<input name="email" type="email" value={form.email} onChange={update} placeholder="name@beispiel.de"/></label><label>Telefon<input name="phone" value={form.phone} onChange={update} placeholder="0176 12345678"/></label><label>Nachricht<input name="note" value={form.note} onChange={update} placeholder="Optional"/></label></div>}{message&&<p className="form-error">{message}</p>}<div className="modal-footer"><span>Schritt {step} von 3</span><button className="primary-button" disabled={!canContinue||loading} onClick={()=>step<3?setStep(step+1):submit()}>{loading?'Wird gesendet…':step<3?'Weiter':'Termin anfragen'} {step<3&&'→'}</button></div></>:<div className="booking-success"><Sparkles size={40}/><div className="eyebrow">Vielen Dank</div><h2>Termin angefragt.</h2><p>Deine Anfrage wurde gespeichert. Wir melden uns zur Bestätigung bei dir.</p><button className="primary-button" onClick={onClose}>Schließen</button></div>}</div></div>;
+  return <div className="modal-backdrop" onMouseDown={onClose}><div className="booking-modal" role="dialog" aria-modal="true" aria-labelledby="booking-title" onMouseDown={e=>e.stopPropagation()}><button className="modal-close" aria-label="Schließen" disabled={loading} onClick={onClose}><X/></button>{step<4?<><div className="eyebrow">Online-Termin</div><h2 id="booking-title">{step===1?'Was möchtest du buchen?':step===2?'Wann passt es dir?':'Noch kurz deine Daten.'}</h2>{step===1&&<div className="booking-options">{services.map(item=><button type="button" key={item.id} className={Number(serviceId)===item.id?'booking-option active':'booking-option'} onClick={()=>setServiceId(item.id)}><span>{item.name}</span><strong>{money(item.priceFrom)}</strong></button>)}</div>}{step===2&&<div className="booking-fields"><label>Datum<input type="date" min={getLocalDate()} value={date} onChange={e=>setDate(e.target.value)}/></label><div><span className="field-label">Uhrzeit</span>{slots.length?<div className="time-grid">{slots.map(t=><button type="button" key={t} className={time===t?'time-slot active':'time-slot'} onClick={()=>setTime(t)}>{t}</button>)}</div>:<p className="empty-state">{date?'Für diesen Tag sind aktuell keine Zeiten verfügbar.':'Bitte wähle zuerst ein Datum.'}</p>}</div></div>}{step===3&&<div className="booking-fields"><label>Name<input name="name" value={form.name} onChange={update} placeholder="Vor- und Nachname" autoComplete="name"/></label><label>E-Mail<input name="email" type="email" value={form.email} onChange={update} placeholder="name@beispiel.de" autoComplete="email"/></label><label>Telefon<input name="phone" value={form.phone} onChange={update} placeholder="0176 12345678" autoComplete="tel"/></label><label>Nachricht<input name="note" value={form.note} onChange={update} placeholder="Optional"/></label></div>}{message&&<p className="form-error" role="alert">{message}</p>}<div className="modal-footer"><span>Schritt {step} von 3</span><div className="modal-actions">{step>1&&<button type="button" className="text-button modal-back" disabled={loading} onClick={goBack}>← Zurück</button>}<button type="button" className="primary-button" disabled={!canContinue||loading} onClick={()=>step<3?setStep(step+1):submit()}>{loading?'Wird gesendet…':step<3?'Weiter':'Termin anfragen'} {step<3&&'→'}</button></div></div></>:<div className="booking-success"><Sparkles size={40}/><div className="eyebrow">Vielen Dank</div><h2>Termin angefragt.</h2><p>Deine Anfrage wurde gespeichert. Wir melden uns zur Bestätigung bei dir.</p><button className="primary-button" onClick={onClose}>Schließen</button></div>}</div></div>;
 }
