@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../services/api';
+import '../admin.css';
 
 const statusOptions = ['Neu','Bestätigt','Erledigt','Storniert','Abgelehnt'];
 
