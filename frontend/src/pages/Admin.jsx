@@ -4,8 +4,8 @@ import '../admin.css';
 
 const statusOptions = ['Neu', 'Bestätigt', 'Erledigt', 'Storniert', 'Abgelehnt'];
 const reviewStatuses = ['Pending', 'Freigegeben', 'Abgelehnt'];
-
 const emptyService = { name: '', category: 'Haare', description: '', priceFrom: '', durationMinutes: 60, active: true };
+const money = value => `${Number(value || 0).toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} €`;
 
 export default function Admin() {
   const [admin, setAdmin] = useState(null);
@@ -81,11 +81,7 @@ export default function Admin() {
     e.preventDefault();
     setSaving(true); setError('');
     try {
-      const payload = {
-        ...editingService,
-        priceFrom: Number(editingService.priceFrom),
-        durationMinutes: Number(editingService.durationMinutes),
-      };
+      const payload = { ...editingService, priceFrom: Number(editingService.priceFrom), durationMinutes: Number(editingService.durationMinutes) };
       await api.updateService(editingService.id, payload);
       setServices(items => items.map(item => item.id === editingService.id ? { ...item, ...payload } : item));
       setEditingService(null);
@@ -166,9 +162,10 @@ export default function Admin() {
 
         {section === 'dashboard' && (
           <div className="admin-stats">
-            {[['Heute', stats?.appointmentsToday], ['Offen', stats?.pendingAppointments], ['Kunden', stats?.customers]].map(([label, value]) => (
-              <div className="admin-stat" key={label}><span>{label}</span><strong>{value ?? '–'}</strong></div>
-            ))}
+            <div className="admin-stat"><span>Heute</span><strong>{stats?.appointmentsToday ?? '–'}</strong><small>Termine</small></div>
+            <div className="admin-stat"><span>Offen</span><strong>{stats?.pendingAppointments ?? '–'}</strong><small>Neue Anfragen</small></div>
+            <div className="admin-stat"><span>Kunden</span><strong>{stats?.customers ?? '–'}</strong><small>Gesamt</small></div>
+            <div className="admin-stat"><span>Umsatz</span><strong>{stats ? money(stats.revenue) : '–'}</strong><small>Aktueller Monat</small></div>
           </div>
         )}
 
@@ -209,5 +206,5 @@ export default function Admin() {
 
 function ServiceForm({ value, onChange, onSubmit, onCancel, saving }) {
   const set = (key, next) => onChange({ ...value, [key]: next });
-  return <form className="service-editor" onSubmit={onSubmit}><div className="service-editor-grid"><label>Name<input value={value.name} onChange={e => set('name', e.target.value)} required /></label><label>Kategorie<input value={value.category} onChange={e => set('category', e.target.value)} required /></label><label>Preis ab (€)<input type="number" min="0" step="0.01" value={value.priceFrom} onChange={e => set('priceFrom', e.target.value)} required /></label><label>Dauer (Min.)<input type="number" min="10" step="5" value={value.durationMinutes} onChange={e => set('durationMinutes', e.target.value)} required /></label><label className="full-field">Beschreibung<textarea value={value.description} onChange={e => set('description', e.target.value)} rows="3" /></label><label className="checkbox-field"><input type="checkbox" checked={Boolean(value.active)} onChange={e => set('active', e.target.checked)} /> Aktiv auf der Website</label></div><div className="modal-actions"><button type="button" className="secondary-button" onClick={onCancel}>Abbrechen</button><button className="primary-button" disabled={saving}>{saving ? 'Speichern…' : 'Speichern'}</button></div></form>;
+  return <form className="service-editor" onSubmit={onSubmit}><div className="service-editor-grid"><label>Name<input value={value.name} onChange={e => set('name', e.target.value)} required /></label><label>Kategorie<input value={value.category} onChange={e => set('category', e.target.value)} required /></label><label>Preis ab (€)<input type="number" min="0" step="0.01" value={value.priceFrom} onChange={e => set('priceFrom', e.target.value)} required /></label><label>Dauer (Min.)<input type="number" min="10" max="480" step="5" value={value.durationMinutes} onChange={e => set('durationMinutes', e.target.value)} required /></label><label className="full-field">Beschreibung<textarea value={value.description} onChange={e => set('description', e.target.value)} rows="3" /></label><label className="checkbox-field"><input type="checkbox" checked={Boolean(value.active)} onChange={e => set('active', e.target.checked)} /> Aktiv auf der Website</label></div><div className="modal-actions"><button type="button" className="secondary-button" onClick={onCancel}>Abbrechen</button><button className="primary-button" disabled={saving}>{saving ? 'Speichern…' : 'Speichern'}</button></div></form>;
 }
