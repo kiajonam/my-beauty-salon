@@ -6,7 +6,7 @@ import db from '../db/database.js';
 
 const router = Router();
 const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 10, standardHeaders: true, legacyHeaders: false });
-const COOKIE = 'barberman_admin_session';
+const COOKIE = 'my_beauty_salon_admin_session';
 
 function cookieOptions() {
   const maxAge = Math.max(60, Math.floor(Number(process.env.SESSION_MAX_AGE_MS || 28800000) / 1000));
@@ -34,8 +34,8 @@ router.post('/login', loginLimiter, (req, res) => {
   const token = jwt.sign({ role: admin.role }, process.env.JWT_SECRET, {
     subject: String(admin.id),
     expiresIn: maxAgeSeconds,
-    issuer: process.env.JWT_ISSUER || 'barberman',
-    audience: process.env.JWT_AUDIENCE || 'barberman-admin',
+    issuer: process.env.JWT_ISSUER || 'my-beauty-salon',
+    audience: process.env.JWT_AUDIENCE || 'my-beauty-salon-admin',
     algorithm: 'HS256',
   });
 
