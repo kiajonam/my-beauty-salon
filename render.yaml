@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: barberman-api
+    name: my-beauty-salon-api
     runtime: node
     rootDir: backend
     buildCommand: npm install
@@ -15,9 +15,9 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_ISSUER
-        value: barberman
+        value: my-beauty-salon
       - key: JWT_AUDIENCE
-        value: barberman-admin
+        value: my-beauty-salon-admin
       - key: SESSION_MAX_AGE_MS
         value: "28800000"
       - key: ADMIN_EMAIL
@@ -39,6 +39,6 @@ services:
       - key: ADMIN_NOTIFICATION_EMAIL
         sync: false
     disk:
-      name: barberman-data
+      name: my-beauty-salon-data
       mountPath: /opt/render/project/data
       sizeGB: 1
