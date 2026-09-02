@@ -8,6 +8,7 @@ const router = Router();
 router.use(requireAdmin);
 const activeStatuses = ['Neu', 'Bestätigt'];
 const validEmail = value => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+const settingKeys = ['salonName','city','phone','email','address','hoursMon','hoursTue','hoursWed','hoursThu','hoursFri','hoursSat','hoursSun'];
 
 router.get('/me', (req, res) => {
   const admin = db.prepare('SELECT id, email, role, created_at AS createdAt FROM admins WHERE id = ?').get(req.admin.sub);
@@ -115,6 +116,27 @@ router.patch('/reviews/:id/status', (req, res) => {
   const result = db.prepare('UPDATE reviews SET status=? WHERE id=?').run(status, Number(req.params.id));
   if (!result.changes) return res.status(404).json({ message: 'Bewertung nicht gefunden.' });
   res.json({ message: 'Bewertung aktualisiert.' });
+});
+
+router.get('/settings', (_req, res) => {
+  const rows = db.prepare('SELECT key, value FROM settings').all();
+  const settings = Object.fromEntries(rows.filter(row => settingKeys.includes(row.key)).map(row => [row.key, row.value]));
+  res.json({ settings });
+});
+
+router.patch('/settings', (req, res) => {
+  const input = req.body?.settings;
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return res.status(400).json({ message: 'Ungültige Einstellungen.' });
+  const allowed = new Set(settingKeys);
+  const updates = Object.entries(input).filter(([key]) => allowed.has(key)).map(([key, value]) => [key, String(value ?? '').trim().slice(0, 180)]);
+  if (!updates.length) return res.status(400).json({ message: 'Keine Änderungen.' });
+  const email = updates.find(([key]) => key === 'email')?.[1] ?? db.prepare('SELECT value FROM settings WHERE key=?').get('email')?.value ?? '';
+  if (!validEmail(email)) return res.status(400).json({ message: 'Bitte eine gültige E-Mail-Adresse eintragen.' });
+  const hours = updates.filter(([key]) => key.startsWith('hours'));
+  for (const [, value] of hours) if (value.toLowerCase() !== 'geschlossen' && !/^\d{2}:\d{2}[–-]\d{2}:\d{2}$/.test(value)) return res.status(400).json({ message: 'Öffnungszeiten müssen z. B. 09:00–18:00 oder Geschlossen sein.' });
+  const save = db.transaction(() => updates.forEach(([key, value]) => db.prepare('INSERT INTO settings (key,value,updated_at) VALUES (?,?,CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP').run(key, value)));
+  save();
+  res.json({ message: 'Einstellungen gespeichert.' });
 });
 
 export default router;
