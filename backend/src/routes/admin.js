@@ -2,6 +2,7 @@ import { Router } from 'express';
 import db from '../db/database.js';
 import { requireAdmin } from '../middleware/auth.js';
 import { STATUSES } from './public.js';
+import { getBerlinDate, getBerlinMonthStart } from '../utils/time.js';
 
 const router = Router();
 router.use(requireAdmin);
@@ -14,12 +15,13 @@ router.get('/me', (req, res) => {
 });
 
 router.get('/dashboard', (_req, res) => {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getBerlinDate();
+  const monthStart = getBerlinMonthStart();
   const stats = {
     appointmentsToday: db.prepare("SELECT COUNT(*) AS count FROM appointments WHERE date = ? AND status NOT IN ('Storniert','Abgelehnt')").get(today).count,
     pendingAppointments: db.prepare("SELECT COUNT(*) AS count FROM appointments WHERE status = 'Neu'").get().count,
     customers: db.prepare('SELECT COUNT(*) AS count FROM customers').get().count,
-    revenue: db.prepare("SELECT COALESCE(SUM(s.price_from),0) AS total FROM appointments a JOIN services s ON s.id=a.service_id WHERE a.status IN ('Neu','Bestätigt','Erledigt') AND a.date >= date('now','start of month')").get().total,
+    revenue: db.prepare("SELECT COALESCE(SUM(s.price_from),0) AS total FROM appointments a JOIN services s ON s.id=a.service_id WHERE a.status IN ('Neu','Bestätigt','Erledigt') AND a.date >= ?").get(monthStart).total,
   };
   res.json({ stats });
 });
