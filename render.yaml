@@ -40,5 +40,5 @@ services:
         sync: false
     disk:
       name: barberman-data
-      mountPath: /opt/render/project/src/data
+      mountPath: /opt/render/project/data
       sizeGB: 1
