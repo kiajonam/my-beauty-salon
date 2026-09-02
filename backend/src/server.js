@@ -31,7 +31,7 @@ app.use(cors({
 app.use(express.json({ limit: '50kb' }));
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: 200, standardHeaders: true, legacyHeaders: false }));
 
-app.get('/health', (_req, res) => res.json({ status: 'ok', service: 'barberman-api' }));
+app.get('/health', (_req, res) => res.json({ status: 'ok', service: 'my-beauty-salon-api' }));
 app.use('/api/public', publicRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
@@ -52,4 +52,4 @@ if (isProduction && (!process.env.SMTP_HOST || !process.env.SMTP_USER || !proces
   console.warn('Warning: SMTP is not fully configured. Appointment emails will be skipped.');
 }
 
-app.listen(port, () => console.log(`Barberman API listening on port ${port}`));
+app.listen(port, () => console.log(`My Beauty Salon API listening on port ${port}`));
