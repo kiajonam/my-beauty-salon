@@ -68,6 +68,12 @@ db.exec(`
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
 
+  CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL DEFAULT '',
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
   CREATE UNIQUE INDEX IF NOT EXISTS idx_active_appointment_slot
     ON appointments(date, time)
     WHERE status IN ('Neu', 'Bestätigt');
@@ -77,4 +83,23 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_services_active ON services(active);
 `);
 
+const defaults = {
+  salonName: 'Barberman',
+  city: 'Köln',
+  phone: '0221 123 45 67',
+  email: 'hello@barberman.de',
+  address: 'Köln, Deutschland',
+  hoursMon: '09:00–18:00',
+  hoursTue: '09:00–18:00',
+  hoursWed: '09:00–18:00',
+  hoursThu: '09:00–19:00',
+  hoursFri: '09:00–19:00',
+  hoursSat: '09:00–16:00',
+  hoursSun: 'Geschlossen',
+};
+const insertSetting = db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)');
+const seedSettings = db.transaction(() => Object.entries(defaults).forEach(([key, value]) => insertSetting.run(key, value)));
+seedSettings();
+
+export { defaults as DEFAULT_SETTINGS };
 export default db;
