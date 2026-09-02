@@ -139,7 +139,7 @@ export default function Admin() {
   if (admin === false) return (
     <div className="admin-page">
       <form className="admin-card admin-login" onSubmit={handleLogin}>
-        <p className="eyebrow">Barberman Admin</p>
+        <p className="eyebrow">My Beauty Salon Admin</p>
         <h1>Willkommen zurück.</h1>
         <p>Verwalte Termine, Kunden und Dienstleistungen.</p>
         <label>E-Mail<input type="email" value={login.email} onChange={e => setLogin({ ...login, email: e.target.value })} required /></label>
@@ -156,7 +156,7 @@ export default function Admin() {
   return (
     <div className="admin-page">
       <aside className="admin-sidebar">
-        <a className="brand" href="/"><span className="brand-mark">B</span><span>Barber<span>man</span></span></a>
+        <a className="brand" href="/"><span className="brand-mark">M</span><span>My Beauty Salon</span></a>
         {Object.keys(navLabels).map(item => <button key={item} onClick={() => navigate(item)} className={section === item ? 'active' : ''}>{navLabels[item]}</button>)}
         <div className="admin-spacer" />
         <button onClick={async () => { await api.logout(); setAdmin(false); }}>Abmelden</button>
