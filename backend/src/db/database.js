@@ -84,10 +84,10 @@ db.exec(`
 `);
 
 const defaults = {
-  salonName: 'Barberman',
+  salonName: 'My Beauty Salon',
   city: 'Köln',
   phone: '0221 123 45 67',
-  email: 'hello@barberman.de',
+  email: 'hello@mybeautysalon.de',
   address: 'Köln, Deutschland',
   hoursMon: '09:00–18:00',
   hoursTue: '09:00–18:00',
